@@ -1,0 +1,1059 @@
+第一章
+
+	spring boot
+		1）自动化配置，开箱即用，快速搭建运行项目；
+		2）提供生产级的服务监控方案，内嵌服务器，可快速部署，纯java配置，没有代码生成，也无需XML配置。
+		3）打包部署。可打包war包部署到Tomcat中运行。也可打包jar包，命令运行 javr -jar xxx.jar
+		4）spring boot 需java8及以上本版，spring5及以上版本，Maven3.2+或Gradle4。
+		
+	
+	在线创建项目：https://start.spring.io/
+	
+	IDEA创建项目
+		Group: com.mxp      //组织ID 域名反写
+		Artifact: aiexam	//模块名称
+		Name: aiexam-web    //项目名称
+		...
+		
+	运行项目
+		1）入口类运行main方法
+		2）maven命令运行 mvn spring-boot:run
+		3）打包war包部署到tomcat的webapps运行
+		4）mvn package , 打包jar包，运行命令 java -jar demo-0.0.1-SNAPSHOT.jar    （/target/demo-0.0.1-SNAPSHOT.jar）
+		
+		预览：http://localhost:8080/
+		
+	
+		
+**************************************************************************************************************************
+
+第二章
+
+	spring-boot基础配置
+	
+		1）@SpringBootApplication ，此注解为组合注解，包含如下
+				@Configuration
+				@EnableAutoConfiguration
+				@ComponentScan
+				
+		2）@ComponentScan 可以扫描与其类同级和子级的被以下注解修饰的类
+				@Service
+				@Repository
+				@Component
+				@Controller
+				@RestController
+				@Configura
+				
+				
+		3）自定义启动banner
+				在resources项目下创建一个 banner.txt文件即可替换默认的启动banner
+				
+				
+		4）web容器配置  ----  添加spring-boot-starter-web依赖后，默认使用Tomcat作为web容器
+				
+				Tomcat配置 ---- application.propertices文件内配置
+					server.port=8081						//端口号
+					server.error.path=/error				//当项目出错时跳转去的页面
+					server.servlet.session.timeout=30m		// session失效时间 30m表示30分，如果不写单位，默认单位秒
+					server.servlet.context-path=/aiexam		//项目名称，不配置默认/。配置则在访问路径中加上配置的路径 http://localhost:8081/aiexam/
+					server.tomcat.uri-encoding=utf-8		//tomcat请求编码
+					server.tomcat.max-threads=500			//tomcat最大线程数
+					server.tomcat.basedir=/home/sang/tmp	//存放tomcat运行日志和临时文件的目录，若不配置，默认使用系统的临时目录
+				
+				
+	
+		5）HTTPS配置
+				cmd: keytool -genkey -alias tomcathttps -keyalg RSA -keysize 2048 -keystore sang.p12 -validity 365
+				// JKS 密钥库使用专用格式。建议使用 "keytool -importkeystore -srckeystore sang.p12 -destkeystore sang.p12 -deststoretype pkcs12" 迁移到行业标准格式 PKCS12
+				
+				命令解释： 
+					-genkey   表示要创建一个新的密钥
+					-alias    表示keystore的别名
+					-keyalg   表示使用的加密算法, RSA是一种非对称加密算法
+					-keysize  表示密钥的长度
+					-keystore 表示生成的密钥存放目录位置  C:\Users\79337
+					-validity 表示密钥的有效时间，单位为填
+					
+				在C:\Users\79337路径下生成证书后，将这个sang.p12文件复制到项目根目录下，再配置application.properties如下
+					
+					# https配置
+					server.ssl.key-store=sang.p12			//密钥文件名
+					server.ssl.key-alias=tomcathttps		//密钥别名
+					server.ssl.key-store-password=123456	//cmd执行过程中设置的密码
+					
+			
+			
+		6）Properties配置
+				
+				application.properties配置文件一共可以出现在如下4各位置
+					项目根目录下的config文件夹中		/config/application.properties						读取优先级1最高
+					项目根目录下						/application.properties								读取优先级2
+					classpath下的config文件夹中			/src/main/resources/config/application.properties 	读取优先级3
+					classpath下							/src/main/resource/application.properties 			读取优先级4
+					
+					
+					
+				分环境配置application.properties
+					application-dev.properties		开发环境配置
+					application-stg.properties		测试环境配置
+					application-prd.properties		生产环境配置
+					
+					在application.propertices文件内配置使用的环境配置文件
+						spring.profiles.active=dev #表示使用application-dev.properties配置文件启动项目
+					
+					
+					
+				在application.properties中定义全局变量
+					book.name=三国演义
+					
+					book.author=罗贯中
+					book.price=30
+					
+					获取
+					@Component
+					@ConfigurationProperties(prefix = "book")
+					public class Book {
+						private String name;
+						private String author;
+						private float price;
+						getter/setter...
+					}	
+					
+		7）YAML配置
+				YAML是JSON的超类，是一种专门用来书写配置文件的语言。可以代替application.properties格式的配置，application.yml
+				
+				书写格式,区分大小写
+					server:
+						port:80
+						servlet:
+							context-path:/aiexam
+				
+				
+				
+*************************************************************************************************************************
+
+第三章：spring boot 整合视图图技术
+
+	
+	1）Thymeleaf 视图层模板引擎   https://www.thymeleaf.org/
+	
+		#添加依赖
+		<dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+		
+		#视图模板存放路径
+		默认的模板位置在 classpath:/templates／，默认的模板后缀为.html
+		
+		#Thymeleaf默认配置
+			＃是否开启缓存，开发时可设置为 false，默认为 true 
+			spring.thymeleaf.cache=true
+			＃检查模板是否存在，默认为 true 
+			spring.thymeleaf.check template=true 
+			＃检查模板位置是否存在，默认为 true 
+			spring.thymeleaf.check-template-location=true 
+			＃模板文件编码 
+			spring.thymeleaf.encoding=UTF-8 
+			＃模板文件位置 
+			spring. thymeleaf.prefix=classpath:/templates/ 
+			#Content-Type 配置 
+			spring.thymeleaf.servlet.content-type=text/html 
+	
+	
+前后端分离开发是主流的开发模式，使用前后端分离技术，就不需要整合视图层技术，后端直接提供接口即可。返回json数据,而不是渲染后的html。
+				
+***************************************************************************************************************************************************************
+
+第四章 ：spring boot 整合web开发
+
+
+	1）返回JSON数据（前后端分离开发技术）
+			添加spring-boot-starter-web依赖后，默认加入了 jackson-databind 作为JSON处理器，则不需要额外的JSON处理器，如果使用其他的JSON处理器，需要去掉默认的依赖。
+			
+			实体类 ----> 对应数据表tb_user_info , 从数据库取数据赋予对应实体类的属性，再控制层创建实体类实例返回JSON数据
+			public class UserInfo {
+				private String name;  // 对应的表字段 name: `name` varchar(128) not null
+				private String sex;
+				private String address;
+				
+				getter/setter...
+			}
+
+			控制层类：处理http/https请求  ---> http://localhost:8081/aiexam/userInfo
+			//@RestController: 包含 @Controller 和 @ResponseBody
+			@RestController					
+			public class UserInfoController {
+				@GetMapping("/userInfo") // 请求映射不一定要与方法名相同
+				public UserInfo userInfo() {
+					UserInfo userInfo = new UserInfo();
+					userInfo.setName("张三蜂");
+					userInfo.setSex("男");
+					userInfo.setAddress("武当山");
+					return userInfo; //返回JSON数据
+				}
+				
+				@GetMapping("/userInfo2")
+				public UserInfo userInfo2() {
+					UserInfo userInfo = new UserInfo();
+					userInfo.setName("张三蜂");
+					userInfo.setSex("男");
+					userInfo.setAddress("武当山");
+					return userInfo; //返回JSON数据
+				}
+			}
+			或 (注意：建议使用第一种合并的简单写法)
+			@Controller
+			public class UserInfoController {
+				@GetMapping("/userInfo")
+				@ResponseBody
+				public UserInfo userInfo() {
+					UserInfo userInfo = new UserInfo();
+					userInfo.setName("张三蜂");
+					userInfo.setSex("男");
+					userInfo.setAddress("武当山");
+					return userInfo; //返回JSON数据
+				}
+				
+				@GetMapping("/userInfo2")
+				@ResponseBody
+				public UserInfo userInfo2() {
+					UserInfo userInfo = new UserInfo();
+					userInfo.setName("张三蜂");
+					userInfo.setSex("男");
+					userInfo.setAddress("武当山");
+					return userInfo; //返回JSON数据
+				}
+			}
+
+	
+					
+	2）自定义JSON处理器：jackson-databind是默认的，Gson（谷歌开发的），fastjson（阿里巴巴开发的）
+		
+			使用其他JSON处理器，先去掉默认依赖，再引入新依赖
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-web</artifactId>
+				<exclusions>
+					<exclusion>
+						 <groupid>com.fasterxml.jackson.core</groupid> 
+						  <artifactid>jackson-databind</artifactid>
+					</exclusion>
+				</exclusions>
+			</dependency>			
+			
+			再引入Gson/fastjson依赖
+			
+			
+			
+	
+	3）静态资源访问
+			静态资源存放路径的访问优先级，从高到低：
+				classpath:/META-INF/resources/     即路径 /src/main/resources/META-INF/resources/
+				classpath:/resources/
+				classpath:/static/       ---- 默认的，静态资源放static目录下即可
+				classpath:/public/
+				
+			可以在application.properties配置文件中指定静态资源访问路径（不配置则系统默认按优先级目录查找）
+				spring.mvc.static-path-pattern=/static/**
+				spring.resources.static-locations=classpath:/static/
+		
+		
+	
+	4）文件上传配置
+			spring.servlet.multipart.enabled=true				//是否开启文件上传支持，默认true
+			spring.servlet.multipart.file-size-threshold=0		//文件写入磁盘的阈值，默认0
+			spring.servlet.multipart.location=E:\\temp			//上传文件保持的位置
+			spring.servlet.multipart.max-file-size=1MB			//上传单个文件的最大大小，默认1MB
+			spring.servlet.multipart.max-request-size=10MB		//多个文件上传时文件的总大小，默认10MB
+			spring.servlet.multipart.resolve-lazily=false		//文件是否延迟解析，默认false
+			
+			
+			
+	5）@ControllerAdvice 是一个全局数据处理组件，同时可以处理全局的异常		
+			
+			
+	6）自定义错误页
+	
+			返回静态页面html的路径 /src/main/resource/static/error
+					404.html
+					405.html
+					500.html
+					
+			返回动态页面html（Thymeleaf模板引擎添加数据）的路径 /src/main/resource/templates/error    访问优先级比静态路径高
+					404.html
+					405.html
+					500.html		
+			
+			
+	
+	7）CORS支持：即支持前端跨域请求
+	
+		1.局部配置，即只对某个接口有效
+		@RestController
+		public class BookController {
+			@DeleteMapping("/book/{id}")
+			@CrossOrigin(value = "http://localhost:8081", maxAge = 1800, allowedHeaders = "*")
+			public Integer deleteBookById(@PathVariable int id) {
+				return id;
+			}
+		}
+		
+		备注：value表示来自此域的请求允许跨域,maxAge表示探测请求options的有效期，默认1800s,即30分钟，有效期内不用才发起探测请求，allowedHeaders表示允许的请求方法，*代表所有请求方法。
+		
+		
+		2.全局配置跨域请求，所有接口方法共用
+			
+			@Configuration
+			public class MyWebMvcConfig implements WebMvcConfigurer {
+				@Override
+				public void addCorsMappings(CorsRegistry registry) {
+					registry.addMapping("/book/**").allowedHeaders("*").allowedMethods("*").maxAge(1800).allowedOrigins("http://localhost:8081");
+				}
+			}
+	
+			
+
+	8）注册拦截器，客户端请求拦截
+	
+		//实现拦截器接口；拦截器中的方法将按 preHandle --> Controller --> postHandle --> afterCompletion 的顺序执行。
+		public class MyInterceptor implements HandlerInterceptor {
+			@Override
+			public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+				return true;
+			}
+
+			@Override
+			public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) {
+				//当拦截器链内存在多个拦截器时，postHandler 在拦截器链内的所有拦截器返回成功时才会调用
+			}
+
+			@Override
+			public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+				//afterCompletion 只有 preHandle 返回 true 才调 用，但若拦截器链内的第一个拦截器的 preHandle 方法返回 false， 则后面的方法都不会执行
+			}
+		}
+		
+		//配置拦截器；使用java配置方式，即定义 @Configuration 类
+		@Configuration
+		public class MyWebMvcConfig implements WebMvcConfigurer {
+			@Override
+			public void addInterceptors(InterceptorRegistry registry) {
+				registry.addInterceptor(new MyInterceptor())
+				.addPathPatterns("/**")
+				.excludePathPatterns("/hello");  //只能访问到 http://localhost:8081/hello
+			}
+		}
+		
+		
+		
+	9）整合Servlet, Filter, 和 Listener
+			
+			分别使用注解：@WebServlet, @WebFilter, @WebListener
+
+
+	10）AOP配置
+	
+			AOP：面向切面编程。在系统运行时动态添加代码的方式。
+			
+	
+	11）自定义首页
+			resource/static/index.html    静态模板，访问优先级高，先找此目录，没对应html,再找动态的
+			或
+			resource/templates/index.html 动态模板
+			
+			
+	12）自定义ico
+			resources/static/ favicon.ico
+
+*******************************************************************************************************************************
+
+第五章：spring boot 整合持久层技术，即spring boot 操作数据库
+
+
+	Entity 			创建表映射实体类
+	Dao				数据库访问层
+	Service			业务服务层
+	Controller 		请求控制层
+	
+	项目结构
+		DemoApplication.java  //项目入口启动类 @SpringBootApplication
+		aop
+		common
+		controller
+		dto
+		entity
+		mapper
+		service
+		vo
+
+
+	1）第一种：使用 JdbcTemplate 操作数据库
+	
+			JdbcTemplate是spring提供的一套JDBC模板框架，没有MyBatis灵活，但比JDBC要方便很多。
+			
+			步骤一：添加依赖
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-jdbc</artifactId>
+			</dependency>
+			<!-- 数据库驱动依赖 -->
+			<dependency>
+				<groupId>mysql</groupId>
+				<artifactId>mysql-connector-java</artifactId>
+			</dependency>
+			<!-- 数据库连接池 -->
+			<dependency>
+				<groupId>com.alibaba</groupId>
+				<artifactId>druid</artifactId>
+				<version>1.1.10</version>
+			</dependency>
+			
+			#数据库配置
+			spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
+			spring.datasource.url=jdbc:mysql://localhost:3306/demo1?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+			spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+			spring.datasource.username=root
+			spring.datasource.password=root
+			
+			步骤二：创建实体类，映射数据库表，类私有属性名与表字段名一一对应，userName -> user_name；并根据实体类创建数据表及表之间的关联关系
+			public class Book {
+				private Integer id;  //使用对象类型声明，默认值null. 不要使用基础类型声明int 默认值0
+				private String name;
+				private String author;
+				getter/setter...
+			}	
+			
+			步骤三：创建Dao层，对数据库增删改查操作
+			@Repository
+			public class BookDao {
+				@Autowired
+				JdbcTemplate jdbcTemplate;//添加依赖后，JdbcTemplate会被自动注册到spring容器中，因此可直接注入JdbcTemplate使用
+
+				//增
+				public int addBook(Book book) {
+					return jdbcTemplate.update("INSERT INTO book(name,author) VALUES (?,?)", book.getName(), book.getAuthor());
+				}
+
+				//改
+				public int updateBook(Book book) {
+					return jdbcTemplate.update("UPDATE book SET name=?,author=? WHERE id=?", book.getName(), book.getAuthor(), book.getId());
+				}
+
+				//删
+				public int deleteBookById(Integer id) {
+					return jdbcTemplate.update("DELETE FROM book WHERE id=?", id);
+				}
+
+				//单查
+				public Book getBookById(Integer id) {
+					return jdbcTemplate.queryForObject("SELECT * FROM book WHERE id=?", new BeanPropertyRowMapper<>(Book.class), id);
+				}
+
+				//全查 BeanPropertyRowMapper将查询出来的列和实体类属性一一对应（注意：实体类属性和表字段命名必须相同；bookName -> book_name）
+				public List<Book> getAllBooks() {
+					return jdbcTemplate.query("SELECT * FROM book", new BeanPropertyRowMapper<>(Book.class));
+				}
+			}
+			
+			步骤四：创建服务层，注入Dao层，并执行业务操作
+			@Service
+			public class BookService {
+				@Autowired
+				BookDao bookDao;
+
+				public int addBook(Book book) {
+					return bookDao.addBook(book);
+				}
+
+				public int updateBook(Book book) {
+					return bookDao.updateBook(book);
+				}
+
+				public int deleteBookById(Integer id) {
+					return bookDao.deleteBookById(id);
+				}
+
+				public Book getBookById(Integer id) {
+					return bookDao.getBookById(id);
+				}
+
+				public List<Book> getAllBooks() {
+					return bookDao.getAllBooks();
+				}
+			}
+			
+			步骤五：创建控制层，注入服务层，处理请求响应
+			@RestController
+			public class BookController {
+				@Autowired
+				BookService bookService;
+
+				@GetMapping("/addBook")  //http://localhost:8081/addBook
+				public int addBook() {
+					Book b1 = new Book(); //实际开发，数据由客户端提交
+					b1.setName("西厢记");
+					b1.setAuthor("王实甫");
+					return bookService.addBook(b1);
+				}
+
+				@GetMapping("/updateBook")
+				public int updateBook() {
+					Book b2 = new Book();
+					b2.setId(4);
+					b2.setName("朝花夕拾");
+					b2.setAuthor("鲁迅");
+					return bookService.updateBook(b2);
+				}
+
+				@GetMapping("/deleteBookById/{id}") //http://localhost:8081/deleteBookById/2
+				public int deleteBookById(@PathVariable int id) {
+					return bookService.deleteBookById(id);
+				}
+
+				@GetMapping("/getBookById/{id}")
+				public Book getBookById(@PathVariable int id) {
+					return bookService.getBookById(id);
+				}
+
+				@GetMapping("/getAllBooks")
+				public List<Book> getAllBooks() {
+					return bookService.getAllBooks();
+				}
+
+			}
+
+所遇问题：
+	数据库链接失败--时区问题
+		在 jdbc url 后加上 &serverTimezone=Asia/Shanghai
+	driver 字符串应该是用
+		spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+**********************************************************************************************************************
+
+MyBatis操作数据库
+
+	步骤一：添加依赖
+			<dependency>
+				<groupId>org.mybatis.spring.boot</groupId>
+				<artifactId>mybatis-spring-boot-starter</artifactId>
+				<version>1.3.2</version>
+			</dependency>
+			<!-- 数据库驱动依赖 -->
+			<dependency>
+				<groupId>mysql</groupId>
+				<artifactId>mysql-connector-java</artifactId>
+			</dependency>
+			<!-- 数据库连接池 -->
+			<dependency>
+				<groupId>com.alibaba</groupId>
+				<artifactId>druid</artifactId>
+				<version>1.1.10</version>
+			</dependency>
+		
+	步骤二：配置数据库连接	
+			
+			#数据库配置
+			spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
+			spring.datasource.url=jdbc:mysql://localhost:3306/demo1?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+			spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+			spring.datasource.username=root
+			spring.datasource.password=root
+			
+	步骤三：创建数据库，表，实体类	
+			public class Book {
+				private Integer id;
+				private String name;
+				private String author;
+				getter/setter...
+			}	
+
+	步骤四：创建数据库访问层Mapper，在项目的根包下面创建一个子包 Mapper，在Mapper中创建BookMapper接口类，定义增删改查方法
+			@Mapper
+			public interface BookMapper {
+				int addBook(Book book);
+				int updateBook(Book book);
+				int deleteBookById(Integer id);
+				Book getBookById();
+				List<Book> getAllBooks();
+			}
+			备注：两种方式可指明接口是一个Mapper
+				  1.在接口声明前面添加注解 @Mapper，即可表明该接口是一个MyBatis中的Mapper
+				  2.在配置类上添加 @MapperScan("org.sang.mapper") 注解，org.sang为GloupID，表示扫描 org.sang.mapper 包下的所有接口作为Mapper。这样就不用在每个接口前面添加 @Mapper 。
+					在入口启动类内添加：@MapperScan("com.tx.aiexam.mapper")
+					
+					可以同时存在 @Mapper和@MapperScan, 一般有@MapperScan就不需写@Mapper
+					
+					
+	步骤五：创建Mapper对应的xml,如 BookMapper.xml, springboot默认读取xml文件是必须放在resources目录下。因此创建 /resources/mybatis/mapper/xxx.xml	
+			BookMapper.xml
+			
+			<?xml version="1.0" encoding="UTF-8"?>
+			<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+			<mapper namespace="com.example.demo.mapper.BookMapper">
+				<insert id="addBook" parameterType="com.example.demo.Book">
+					INSERT INTO book(name,author) VALUES (#{name},#{author})
+				</insert>
+				<delete id="deleteBookById" parameterType="int">
+					DELETE FROM book WHERE id=#{id}
+				</delete>
+				<update id="updateBookById" parameterType="com.example.demo.Book">
+					UPDATE book SET name=#{name},author=#{author} WHERE id=#{id}
+				</update>
+				<select id="getBookById" parameterType="int" resultType="com.example.demo.Book">
+					SELECT * FROM book WHERE id=#{id}
+				</select>
+				<select id="getAllBooks" resultType="com.example.demo.Book">
+					SELECT * FROM book
+				</select>
+			</mapper>
+			
+			备注：namespace=Mapper的包路径 id=Mapper接口的方法 parameterType=方法参数类型 resultType=数据返回类型
+				  #{} 用来代替接口中的参数，实体类中的属性可以直接通过#{实体类属性名}来获取，等同于 book.getAuthor();
+				  
+				  
+				  
+
+	步骤六：创建Service层
+			@Service
+			public class BookService {
+				@Autowired
+				BookMapper bookMapper;  //问题：红线报错，安装mybatis plugin
+
+				public int addBook(Book book) {
+					return bookMapper.addBook(book);
+				}
+
+				public int updateBook(Book book) {
+					return bookMapper.updateBook(book);
+				}
+
+				public int deleteBookById(Integer id) {
+					return bookMapper.deleteBookById(id);
+				}
+
+				public Book getBookById(Integer id) {
+					return bookMapper.getBookById(id);
+				}
+
+				public List<Book> getAllBooks() {
+					return bookMapper.getAllBooks();
+				}
+			}
+
+	
+	步骤七：创建控制层
+			@RestController
+			public class BookController {
+				@Autowired
+				BookService bookService;
+
+				@GetMapping("/addBook")
+				public int addBook() {
+					Book b1 = new Book();
+					b1.setName("西厢记");
+					b1.setAuthor("王实甫");
+					return bookService.addBook(b1);
+				}
+
+				@GetMapping("/updateBook")
+				public int updateBook() {
+					Book b2 = new Book();
+					b2.setId(3);
+					b2.setName("朝花夕拾");
+					b2.setAuthor("鲁迅");
+					return bookService.updateBook(b2);
+				}
+
+				@GetMapping("/deleteBookById/{id}")
+				public int deleteBookById(@PathVariable int id) {
+					return bookService.deleteBookById(id);
+				}
+
+				@GetMapping("/getBookById/{id}")
+				public Book getBookById(@PathVariable int id) {
+					return bookService.getBookById(id);
+				}
+
+				@GetMapping("/getAllBooks")
+				public List<Book> getAllBooks() {
+					return bookService.getAllBooks();
+				}
+			}
+
+
+注意：
+
+	在Maven工程中，XML配置文件建议写在resources目录下。写在其他包下，Maven在运行时会忽略包下的XML文件。
+	
+	如果在其他包内创建XML,则需在pom.xml内配置
+		<build>
+			<resources>
+				<resource>
+					<directory>src/main/java</directory>
+					<includes>
+						<include>**/*.properties</include>
+						<include>**/*.xml</include>
+					</includes>
+					<filtering>false</filtering>
+				</resource>
+			</resources>
+		</build>
+		
+		
+	读取在 resource/mybatis/mapper/ xxx.xml 配置如下
+		#mybatis配置
+		mybatis.mapper-locations=classpath:mybatis/mapper/*.xml
+		
+		
+
+**************************************************************************************************************************************
+	
+Spring Data JPA
+
+	Spring Data是Spring的一个子项目，致力于简化数据库访问，通过规范的方法名称来分析开发的意图，减少数据库访问层的代码。支持关系型和非关系型数据库操作。
+	
+	步骤一：创建数据库（不用创建表）
+			CREATE DATABASE `jpa` DEFAULT CHARACTER SET utf8;
+			
+			
+	步骤二：添加依赖
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-data-jpa</artifactId>
+			</dependency>
+			<dependency>
+				<groupId>mysql</groupId>
+				<artifactId>mysql-connector-java</artifactId>
+			</dependency>
+			<dependency>
+				<groupId>com.alibaba</groupId>
+				<artifactId>druid</artifactId>
+				<version>1.1.10</version>
+			</dependency>
+			
+			
+	步骤三：配置数据库及JPA
+			
+			#mysql
+			spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
+			spring.datasource.url=jdbc:mysql://localhost:3306/jpa?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+			spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+			spring.datasource.username=root
+			spring.datasource.password=root
+			#JPA
+			spring.jpa.show-sql=true
+			spring.jpa.database=mysql
+			spring.jpa.hibernate.ddl-auto=update
+			spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL57Dialect
+	
+	
+	步骤四：创建实体类
+			@Entity(name = "tb_book") //@Entity注解表示该类是一个实体类，在项目启动时会根据该类自动生成一张表，name=自定义表名，如果不配置，则表名为实体类名
+			public class Book {
+				@Id  //@Id 表示该属性为主键，每一个实体必须有一个主键
+				@GeneratedValue(strategy = GenerationType.IDENTITY)  //@GeneratedValue表示主键自动生成，strategy则表示主键的生成策略
+				private Integer id;
+				@Column(name = "book_name", nullable = false)  //@Column注解可自定义表字段，name=自定义表字段名
+				private String name;
+				private String author;
+				private Float price;
+				@Transient  // 表示忽略此字段，即不会生成对应的表字段
+				private String description;
+				getter/setter...
+			}
+			
+	步骤五：创建Dao层
+	
+	步骤六：创建Service层
+	
+	步骤七：创建控制层Controller
+	
+	步骤八：编写测试类/PostMan接口请求
+
+
+
+工具：MyBatis-Plus
+	
+	https://mp.baomidou.com/
+	
+	只需简单配置，即可快速进行 CRUD 操作，从而节省大量时间。热加载、代码生成、分页、性能分析等功能一应俱全。
+
+
+*****************************************************************************************************************************
+
+Redis
+
+	Redis是一个使用C语言编写的基于内存的NoSQL数据库，是目前最流行的键值对存储数据库。由一个Key，Value映射的字典构成。
+	Value支持字符串，列表，集合，有序集合，散列等。
+	Redis可以作缓存使用，也可以配置数据持久化后作为NoSQL数据库使用。
+	
+	安装Redis
+		https://redis.io/
+	
+	
+	#配置redis
+	spring.redis.database=0					//表示使用的Redis库的编号，Redis中提供了16个database,编号为0-15
+	spring.redis.host=127.0.0.1				//Redis实例的地址
+	spring.redis.port=6379					//端口号，默认6379
+	spring.redis.password=123456			//Redis登录密码
+	spring.redis.jedis.pool.max-active=8	//Redis连接池的最大连接数，默认8
+	spring.redis.jedis.pool.max-idle=8		//Redis连接池中的最大空闲连接数，默认8
+	spring.redis.jedis.pool.max-wait=-1ms	//连接池的最大阻塞等待时间，默认-1，表示没有限制
+	spring.redis.jedis.pool.min-idle=0		//连接池最小空闲连接数
+
+
+
+*******************************************************************************************************************
+
+MongoDB
+
+	#配置MongoDB
+	spring.data.mongodb.authentication-database=admin
+	spring.data.mongodb.database=test
+	spring.data.mongodb.host=127.0.0.1
+	spring.data.mongodb.port=27017
+	spring.data.mongodb.username=root
+	spring.data.mongodb.password=123456
+
+
+*******************************************************************************************************************
+
+构建RESTful服务
+
+	RESTful 是一种web软件架构风格，只是一种设计风格，而不是标准。
+	匹配或兼容这种架构风格的网络服务称为REST服务。
+	
+	RESTful服务是前后端分离的一种设计风格。
+	在REST中，资源是由URI来指定的，对资源的增删改查操作可以通过HTTP协议提供的GET,POST,PUT,DELETE等方法实现。
+	
+	添加依赖
+		<dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-rest</artifactId>
+        </dependency>
+	
+	
+	一些常见配置
+	
+	#每页默认记录数，默认值20
+	spring.data.rest.default-page-size=20
+	#分页查询页面参数名，默认值page
+	spring.data.rest.page-param-name=page
+	#分页查询记录数参数名，默认size
+	spring.data.rest.limit-param-name=size
+	#分页查询排序参数名，默认值sort
+	spring.data.rest.sort-param-name=sort
+	#base-path表示给所有请求路径都加上前缀
+	spring.data.rest.base-path=/api
+	#添加成功是是否返回添加内容
+	spring.data.rest.return-body-on-create=true
+	#更新成功时是否返回更新内容
+	spring.data.rest.return-body-on-update=true
+
+
+************************************************************************************************************************
+
+开发者工具与单元测试
+
+	1)devtools
+	
+		热部署：spring-boot-devtools
+		
+		添加依赖：spring-boot-devtools 引入项目后，只要 classpath 路径下的文件发生了变化，项目就会自动重启
+		<dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <optional>true</optional>
+        </dependency>
+		
+		
+	备注：resources下静态资源变化是不会触发服务重启的，需要指定配置，
+	spring.devtools.restart.exclude=static/**
+	或者
+	spring.devtools.restart.additional-paths=src/main/resource/static
+	
+	禁止自动重启配置 
+	spring.devtools.restart.enabled=false
+	
+	
+
+
+	2)单元测试
+	
+	
+***************************************************************************************************************************************	
+	
+常用的缓存
+
+
+	1）Redis单机缓存
+	
+	步骤一：添加依赖
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-cache</artifactId>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-data-redis</artifactId>
+				<exclusions>
+					<exclusion>
+						<groupId>io.lettuce</groupId>
+						<artifactId>lettuce-core</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>redis.clients</groupId>
+				<artifactId>jedis</artifactId>
+			</dependency>
+			
+			
+	步骤二：配置
+			#缓存配置
+			spring.cache.cache-names=c1,c2			//配置缓存名称，Redis中的key都有 一个前缀，默认前缀就是 " 缓存名:: "
+			spring.cache.redis.time-to-live=1800s	//过期时间 30分
+			#redis配置
+			spring.redis.database=0					
+			spring.redis.host=127.0.0.1
+			spring.redis.port=6379
+			spring.redis.password=123456
+			spring.redis.jedis.pool.max-active=8
+			spring.redis.jedis.pool.max-idle=8
+			spring.redis.jedis.pool.max-wait=-1ms
+			spring.redis.jedis.pool.min-idle=0
+	
+	
+	步骤三：在入口类开启缓存，添加 @EnableCaching  注解	
+	
+	步骤四：创建实体类
+	
+	步骤五：创建Dao层
+			
+			@Repository
+			@CacheConfig(cacheNames = "book_cache")  //指明使用的缓存的名字，可选。
+			public class BookDao {
+				@Cacheable  //表示对该方法进行缓存，默认情况下，缓存的key是该方法的参数，缓存的value是方法的返回值。在类内调用此方法时，缓存存在（在有效期内）则使用缓存数据，不会执行该方法。
+				public Book getBookById(Integer id) {
+					Book book = new Book();
+					book.setId(id);
+					book.setName("三国演义");
+					book.setAuthor("罗贯中");
+					return book;
+				}
+
+				@CachePut(key = "#book.id")  //自定义key, 缓存的key的参数为book对象中的id值
+				public Book updateBookById(Book book) {
+					book.setName("朝花夕拾");
+					return book;
+				}
+
+				@CacheEvict(key = "#id") //自定义key，缓存的key为参数id
+				public int deleteBookById(Integer id) {
+					return id;
+				}
+			}
+			
+		备注：@Cacheable(condition="#id%2==0")表示当id对2取余数为0时才进行缓存	
+			
+	
+	步骤六：创建Service层
+		
+
+
+
+	2）Redis集群缓存
+	
+	
+	
+	
+********************************************************************************************************************************	
+
+spring boot 安全管理
+
+	1）spring security
+	
+	步骤一：添加依赖，添加了依赖后，项目中所有的资源都会被保护起来。
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-security</artifactId>
+			</dependency>
+	
+	步骤二：创建控制层，定义一个访问接口，验证security的安全管理
+			@RestController
+			public class Hello {
+				@GetMapping("/hello")
+				public String hello() {
+					return "hello page";
+				}
+			}
+			
+			当访问http://localhost:8080/hello时会跳转至http://localhost:8080/login，此登录验证页面是由spring security提供的。默认登录名user,密码启动时随机生成并在控制台打印出来。
+			输入登录验证后才能真正的访问http://localhost:8080/hello
+			
+			
+	步骤三：自定义security验证登录名和密码及角色。自定义后控制台不再打印默认生成的随机密码
+	
+			#配置security
+			spring.security.user.roles=admin  //admin,user
+			spring.security.user.name=zhangsan
+			spring.security.user.password=123456
+	
+
+
+********************************************************************************************************************
+
+OAuth认证：access_token 认证
+
+	OAuth 是一个开发标准，该标准允许用户第三方应用访问该用户在某一网站上存储的私密资源（如头像，照片，视频等），而在这个过程中无须将用户名和密码提供给第三方应用。
+	实现这一功能是通过提供一个令牌（token），而不是用户名和密码来访问他们存放在特定服务端提供者的数据。每一个token授权一个特定的网站在特定的时间段内
+	访问特定的资源。
+	
+	传统的web开发登录认证一般都是基于Session的，但是前后端分离的框架中继续使用Session会有很多不便并小程序不支持。
+
+
+
+
+***************************************************************************************************************************************
+
+Shiro
+
+	Apache Shiro 是一个开源的轻量级的java安全框架，提供身份验证，授权，密码管理及会话管理等功能。
+	
+	依赖：shiro-spring-boot-web-starter
+	
+	
+
+***************************************************************************************************************************************
+
+WebSocket: 服务端向客户端主动发送消息
+
+	WebSocket 是一种在单个TCP连接上进行全双工通信的协议。允许服务端主动向客户端推送数据。
+	浏览器和服务端只需完成一次握手，两者之间就可以直接创建持久的连接，并进行双向数据传输。
+	
+	区别HTTP: HTTP是无状态连接，每次都是重新请求与响应。 而WebSocket只需完成一次握手请求。即 ws或wss, 相当于http和https。
+	
+	
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	

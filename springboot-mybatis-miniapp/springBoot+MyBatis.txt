@@ -1,0 +1,208 @@
+SpringBoot + MyBatis
+
+
+开发步骤
+
+	1）创建项目,添加web/mybatis依赖, pom.xml配置
+			
+			<!--依赖版本管理-->
+			<parent>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-parent</artifactId>
+				<version>2.1.6.RELEASE</version>
+				<relativePath/> <!-- lookup parent from repository -->
+			</parent>
+			
+	
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-web</artifactId>
+				</dependency>
+			<dependency>
+				<groupId>org.mybatis.spring.boot</groupId>
+				<artifactId>mybatis-spring-boot-starter</artifactId>
+				<version>2.1.0</version>
+			</dependency>
+			<!--数据库驱动 必须的-->
+			<dependency>
+				<groupId>mysql</groupId>
+				<artifactId>mysql-connector-java</artifactId>
+			</dependency>
+			<!--数据库连接池 必须的-->
+			<dependency>
+				<groupId>com.alibaba</groupId>
+				<artifactId>druid</artifactId>
+				<version>1.1.10</version>
+			</dependency>
+			
+			
+			mybatis-config.xml 配置：在classpath://resources下创建 mybatis-config.xml文件并配置
+			
+				<?xml version="1.0" encoding="UTF-8"?>
+				<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+				<configuration>
+					<!--配置全局属性-->
+					<settings>
+						<!--使用jdbc的getGeneratedKeys获取数据库自增主键值-->
+						<setting name="useGeneratedKeys" value="true"/>
+						<!--使用列标签替换列别名，默认true-->
+						<setting name="useColumnLabel" value="true"/>
+						<!--开启驼峰命名转换；Table{create_time} -> Entity{createTime}-->
+						<setting name="mapUnderscoreToCamelCase" value="true"/>
+					</settings>
+				</configuration>
+				
+				
+			application.properties配置
+
+				#数据库配置
+				spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
+				spring.datasource.url=jdbc:mysql://localhost:3306/demo2?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+				spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+				spring.datasource.username=root
+				spring.datasource.password=root
+				#mybatis配置
+				mybatis.mapper-locations=classpath:mapper/*.xml
+				
+			
+	
+	2）指定IDEA开发工具的Maven为本地Maven路径
+			Maven home directory: D:/apache-maven-3.6.0/apache-maven-3.6.0
+			
+	
+	3）表设计与实体类创建
+			
+			表tb_area
+			CREATE DATABASE demo2 DEFAULT CHARACTER 
+			SET utf8;
+			USE demo2;
+			CREATE TABLE
+			IF
+				NOT EXISTS `tb_area` (
+					`area_id` INT ( 2 ) NOT NULL AUTO_INCREMENT,
+					`area_name` VARCHAR ( 200 ) NOT NULL,
+					`priority` INT ( 2 ) NOT NULL DEFAULT '0' COMMENT '权重排序',
+					`create_time` datetime DEFAULT NULL,
+					`last_edit_time` datetime DEFAULT NULL,
+					PRIMARY KEY ( `area_id` ),
+				UNIQUE KEY `UK_AREA` ( `area_name` ) 
+				) ENGINE = INNODB AUTO_INCREMENT = 1 DEFAULT CHARSET = utf8;
+				
+				
+			实体entity/Area.java
+			public class Area {
+				private Integer areaId;
+				private String areaName;
+				private Integer priority;
+				private Date createTime;
+				private Date lastEditTime;
+				getter/setting...
+			}
+			
+				
+	4）创建Dao层 ---- 对数据库增删改查操作, 接口
+	
+			public interface AreaDao {
+				List<Area> queryArea();
+
+				Area queryAreaById(int areaId);
+
+				int insertArea(Area area);
+
+				int updateArea(Area area);
+
+				int deleteAreaById(int areaId);
+			}
+			
+		创建Dao层对应的Mapper文件，在classpath:/resources下创建 AreaDao.xml	
+
+
+	5）创建Service层 ---- 实现Dao层的所有接口,整合业务逻辑，编写业务代码
+	
+			定义service层接口
+			实现service层的所有接口，业务逻辑判断等
+	
+	
+	6）创建Controlle层 ---- 对客户端请求及响应，响应即执行Sevice层的方法返回数据, 使用postMan工具测试http请求
+	
+	
+	7）单元测试：在Dao层的接口名出按 "alt + enter" 快速创建测试类
+		
+			@RunWith(SpringRunner.class)
+			@SpringBootTest
+			public class AreaDaoTest {
+				@Autowired
+				private AreaDao areaDao;
+
+				@Test
+				public void queryArea() {
+					List<Area> areaList = areaDao.queryArea();
+					assertEquals(2, areaList.size());
+				}
+
+				@Test
+				@Ignore //忽略执行
+				public void queryAreaById() {
+					Area area = areaDao.queryAreaById(1);
+					//assertEquals("预期值"，"获取值") 两者比较
+					assertEquals("东苑", area.getAreaName());
+				}
+
+				@Test
+				@Ignore
+				public void insertArea() {
+					Area area = new Area();
+					area.setAreaName("南苑");
+					area.setPriority(1);
+					int effectedNum = areaDao.insertArea(area);
+					assertEquals(1, effectedNum);
+				}
+
+				@Test
+				@Ignore
+				public void updateArea() {
+					Area area = new Area();
+					area.setAreaName("西苑");
+					area.setAreaId(3);
+					area.setLastEditTime(new Date());
+					int effectedNum = areaDao.updateArea(area);
+					assertEquals(1, effectedNum);
+				}
+
+				@Test
+				@Ignore
+				public void deleteAreaById() {
+					Area area = new Area();
+					area.setAreaId(2);
+					int effectedNum = areaDao.deleteAreaById(area.getAreaId());
+					assertEquals(1, effectedNum);
+				}
+			}
+			
+		
+
+	8）创建统一异常处理类  
+	
+			@ControllerAdvice
+			public class GlobalExceptionHandler {
+				@ExceptionHandler(value = Exception.class)
+				@ResponseBody
+				private Map<String, Object> exceptionHandler(HttpServletRequest req, Exception e) {
+					Map<String, Object> modelMap = new HashMap<String, Object>();
+					modelMap.put("success", false);
+					modelMap.put("errMsg", e.getMessage());
+					return modelMap;
+				}
+			}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
