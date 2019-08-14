@@ -1,0 +1,137 @@
+实战步骤
+
+1）添加项目依赖 pom.xml
+
+	<dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!--mybatis-plus-->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <version>3.1.0</version>
+        </dependency>
+		
+        <!--简化代码，实体类不需写getter/setter,添加注解@Data-->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+		
+        <!--mysql连接-->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+        </dependency>
+		
+        <!--数据库连接池-->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid</artifactId>
+            <version>1.1.10</version>
+        </dependency>
+		
+    </dependencies>
+	
+	
+
+2）配置 application.properties
+
+	#配置数据库
+	spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
+	spring.datasource.url=jdbc:mysql://localhost:3306/demo4?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+	spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+	spring.datasource.username=root
+	spring.datasource.password=root
+	
+
+3）创建实体类(即Model层)及对应数据表
+
+	@Data
+	public class User {
+		private Integer id;
+		private String name;
+		private Integer age;
+		private String email;
+		//引入lombok依赖，不需写getter/setter，添加注解@Data, lombok在代码编译时自动创建getter/setter
+	}
+	
+	//创建user表
+	CREATE TABLE
+	IF
+		NOT EXISTS `user` (
+			`id` INT ( 11 ) NOT NULL AUTO_INCREMENT COMMENT '主键',
+			`name` VARCHAR ( 30 ) NULL DEFAULT NULL COMMENT '姓名',
+			`age` INT ( 11 ) NULL DEFAULT NULL COMMENT '年龄',
+			`email` VARCHAR ( 50 ) NULL DEFAULT NULL COMMENT '邮箱',
+			PRIMARY KEY ( `id` ) 
+		) ENGINE = INNODB AUTO_INCREMENT = 1 DEFAULT CHARSET utf8;
+
+
+4）编写Mapper接口(即Dao层)，继承BaseMapper
+
+	public interface UserMapper extends BaseMapper<User> {
+		//UserMapper 继承了Mybatis-plus的 CRUD 功能
+	}
+
+
+5）项目入口启动类配置Mapper自动扫描注解
+
+	@SpringBootApplication
+	@MapperScan("com.example.mybatisplusdemo.mapper")  //扫描mapper包下的所有Mapper类
+	public class MybatisPlusDemoApplication {
+
+		public static void main(String[] args) {
+			SpringApplication.run(MybatisPlusDemoApplication.class, args);
+		}
+
+	}
+	
+	
+
+6）编写测试
+
+	@Autowired
+    private UserMapper userMapper;
+
+    @Test
+    public void testSelect() {
+        System.out.println("---- selectAll method test ----");
+        List<User> userList = userMapper.selectList(null);
+        Assert.assertEquals(6, userList.size());
+        userList.forEach(System.out::println); //控制台打印结果
+    }
+	
+
+
+总结
+
+	1）引入 MyBatis-Plus 之后请不要再次引入 MyBatis 以及 MyBatis-Spring，以避免因版本差异导致的问题。
+	
+	
+*******************************************************************************************************************************************************
+
+
+代码生成器
+
+	AutoGenerator 是 MyBatis-Plus 的代码生成器，通过 AutoGenerator 可以快速生成 Entity、Mapper、Mapper XML、Service、Controller 等各个模块的代码。
+
+
+
+
+
+
+
+
+	
+	
+	
